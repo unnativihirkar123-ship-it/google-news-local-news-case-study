@@ -238,6 +238,10 @@ This case study shows that recommendation and personalization systems are not li
 ---
 
 <div align="center">
+  ##  Demo Preview
+
+![Google News Local Demo](screenshot.png)
+
 ##  About the Author
 
 | Field | Details |
