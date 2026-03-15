@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google News Local — Systems Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1a73e8;
+    --red: #ea4335;
+    --yellow: #fbbc04;
+    --green: #34a853;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #202124;
+    --muted: #5f6368;
+    --border: #e0e0e0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .g-dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .g-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  nav {
+    display: flex;
+    gap: 4px;
+    margin-left: 24px;
+    flex: 1;
+  }
+
+  nav a {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  nav a:hover { background: var(--bg); }
+  nav a.active {
+    background: #e8f0fe;
+    color: var(--blue);
+    font-weight: 500;
+  }
+
+  /* ── SYSTEM BADGE BANNER ── */
+  .system-banner {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .system-banner span {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .sys-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+  }
+
+  .sys-badge.filter { background: #e8f0fe; color: #185fa5; }
+  .sys-badge.recommend { background: #e6f4ea; color: #137333; }
+  .sys-badge.personal { background: #fce8e6; color: #a50e0e; }
+
+  .sys-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .sys-badge.filter .dot { background: var(--blue); }
+  .sys-badge.recommend .dot { background: var(--green); }
+  .sys-badge.personal .dot { background: var(--red); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 24px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+  }
+
+  /* ── LOCATION BAR ── */
+  .location-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .location-pin {
+    width: 32px; height: 32px;
+    background: #e8f0fe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .location-pin svg { width: 16px; height: 16px; fill: var(--blue); }
+
+  .location-text { flex: 1; }
+  .location-city {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .location-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .filter-tag {
+    font-size: 11px;
+    background: #e8f0fe;
+    color: var(--blue);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── NEWS CARD ── */
+  .news-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 14px;
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+    animation: fadeIn 0.4s ease both;
+  }
+
+  .news-card:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .news-card:nth-child(2) { animation-delay: 0.05s; }
+  .news-card:nth-child(3) { animation-delay: 0.1s; }
+  .news-card:nth-child(4) { animation-delay: 0.15s; }
+
+  .news-img {
+    width: 80px;
+    height: 60px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .news-body { flex: 1; }
+
+  .news-source {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .news-source .src-dot {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .news-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .news-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .news-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+
+  .news-time {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── RECOMMEND SECTION ── */
+  .rec-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+    animation: fadeIn 0.4s ease both;
+    border-left: 3px solid var(--green);
+  }
+
+  .rec-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+
+  .rec-reason {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .rec-title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .sidebar-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .reading-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .reading-item:last-child { border-bottom: none; }
+
+  .reading-bar-wrap { flex: 1; }
+  .reading-topic { font-size: 12px; color: var(--text); margin-bottom: 3px; }
+  .reading-bar-bg {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .reading-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+  .reading-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  .profile-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .profile-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .profile-label { font-size: 12px; color: var(--text); flex: 1; }
+  .profile-val { font-size: 11px; color: var(--muted); }
+
+  /* ── LOCATION SELECTOR ── */
+  .loc-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .loc-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .loc-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .loc-btn.selected {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+  }
+
+  /* ── SYSTEM EXPLAINER ── */
+  .explainer {
+    background: #fffbf0;
+    border: 1px solid #f0e0a0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: #7a6000;
+    line-height: 1.6;
+  }
+
+  .explainer strong { color: #5a4000; }
+
+  /* ── FOOTER NOTE ── */
+  .demo-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="g-dots">
+      <div class="g-dot" style="background:#4285f4"></div>
+      <div class="g-dot" style="background:#ea4335"></div>
+      <div class="g-dot" style="background:#fbbc04"></div>
+      <div class="g-dot" style="background:#34a853"></div>
+    </div>
+    News
+  </div>
+  <nav>
+    <a href="#" class="active">For you</a>
+    <a href="#">Headlines</a>
+    <a href="#" onclick="showLocal()">Local</a>
+    <a href="#">Following</a>
+  </nav>
+</header>
+
+<!-- SYSTEM BANNER -->
+<div class="system-banner">
+  <span>Active systems:</span>
+  <div class="sys-badge filter"><div class="dot"></div> Filtering System</div>
+  <div class="sys-badge recommend"><div class="dot"></div> Recommendation System</div>
+  <div class="sys-badge personal"><div class="dot"></div> Personalization System</div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: MAIN FEED -->
+  <main>
+
+    <!-- Location bar (Filtering System) -->
+    <div class="location-bar">
+      <div class="location-pin">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div class="location-text">
+        <div class="location-city" id="cityName">Nagpur, Maharashtra</div>
+        <div class="location-sub">Detected via GPS · Filtering news for your city</div>
+      </div>
+      <div class="filter-tag">Filtering ON</div>
+    </div>
+
+    <!-- Location switcher -->
+    <div class="loc-selector">
+      <button class="loc-btn selected" onclick="switchCity(this, 'Nagpur, Maharashtra', 'nagpur')">Nagpur</button>
+      <button class="loc-btn" onclick="switchCity(this, 'Mumbai, Maharashtra', 'mumbai')">Mumbai</button>
+      <button class="loc-btn" onclick="switchCity(this, 'Pune, Maharashtra', 'pune')">Pune</button>
+      <button class="loc-btn" onclick="switchCity(this, 'Delhi, India', 'delhi')">Delhi</button>
+    </div>
+
+    <!-- Explainer box -->
+    <div class="explainer" id="explainerBox">
+      <strong>Filtering System in action:</strong> All news below has been filtered to show only stories from <strong>Nagpur</strong>. Stories from other cities are removed. This is exactly like Amazon filtering products by your selected category.
+    </div>
+
+    <!-- Top local stories -->
+    <div class="section-label">Top local stories</div>
+    <div id="localFeed"></div>
+
+    <!-- Recommended section -->
+    <div class="section-label" style="margin-top:8px">Recommended for you</div>
+    <div class="explainer" style="background:#f0faf4;border-color:#a8d5b5;color:#1a5c30">
+      <strong>Recommendation System in action:</strong> These stories are suggested based on your reading history. You read 5 cricket articles this week — so cricket news is ranked higher for you specifically.
+    </div>
+    <div id="recFeed"></div>
+
+  </main>
+
+  <!-- RIGHT: SIDEBAR -->
+  <aside>
+
+    <!-- Reading profile -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--red)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        Your reading profile
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Personalization System — built from your history</div>
+      <div class="reading-item">
+        <div class="reading-bar-wrap">
+          <div class="reading-topic">Cricket & Sports</div>
+          <div class="reading-bar-bg"><div class="reading-bar-fill" style="width:85%;background:var(--blue)"></div></div>
+        </div>
+        <div class="reading-count">5 articles</div>
+      </div>
+      <div class="reading-item">
+        <div class="reading-bar-wrap">
+          <div class="reading-topic">City & Traffic</div>
+          <div class="reading-bar-bg"><div class="reading-bar-fill" style="width:65%;background:var(--green)"></div></div>
+        </div>
+        <div class="reading-count">4 articles</div>
+      </div>
+      <div class="reading-item">
+        <div class="reading-bar-wrap">
+          <div class="reading-topic">Weather</div>
+          <div class="reading-bar-bg"><div class="reading-bar-fill" style="width:40%;background:var(--yellow)"></div></div>
+        </div>
+        <div class="reading-count">2 articles</div>
+      </div>
+      <div class="reading-item">
+        <div class="reading-bar-wrap">
+          <div class="reading-topic">Politics</div>
+          <div class="reading-bar-bg"><div class="reading-bar-fill" style="width:20%;background:#aaa)"></div></div>
+        </div>
+        <div class="reading-count">1 article</div>
+      </div>
+    </div>
+
+    <!-- System summary -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">How your feed is built</div>
+      <div class="profile-row">
+        <div class="profile-dot" style="background:var(--blue)"></div>
+        <div class="profile-label">Filtering System</div>
+        <div class="profile-val">City: Nagpur</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-dot" style="background:var(--green)"></div>
+        <div class="profile-label">Recommendation</div>
+        <div class="profile-val">Cricket ranked #1</div>
+      </div>
+      <div class="profile-row">
+        <div class="profile-dot" style="background:var(--red)"></div>
+        <div class="profile-label">Personalization</div>
+        <div class="profile-val">Unique to you</div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.6">
+        Your neighbour in Nagpur sees the same city news — but in a different order based on their reading habits.
+      </div>
+    </div>
+
+    <!-- Case study note -->
+    <div class="sidebar-card" style="background:#f8f4ff;border-color:#d0b8f0">
+      <div class="sidebar-title" style="color:#6b3fa0">Case Study Note</div>
+      <div style="font-size:12px;color:#5a3490;line-height:1.6">
+        This demo shows the 3 systems studied in the case study:<br><br>
+        <strong>Amazon</strong> → Product tracking + Shopping cart + Recommendation<br><br>
+        <strong>Google News</strong> → Filtering + Recommendation + Personalization<br><br>
+        Both do the same thing — just for different content.
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<div class="demo-note">
+  Case Study Demo — Google News Local News Systems &nbsp;·&nbsp; Built for CS/IT Assignment &nbsp;·&nbsp; Systems: Filtering · Recommendation · Personalization
+</div>
+
+<script>
+const newsData = {
+  nagpur: [
+    { emoji: "🚇", bg: "#e8f0fe", title: "Nagpur Metro Phase 2 construction begins on Wardha Road stretch", source: "Nagpur Times", srcBg: "#1a73e8", time: "2 hours ago", tag: "City", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "🌧️", bg: "#e6f4ea", title: "Heavy rain alert issued for Nagpur and Vidarbha region tonight", source: "Times of India Nagpur", srcBg: "#ea4335", time: "45 min ago", tag: "Weather", tagBg: "#fce8e6", tagColor: "#a50e0e" },
+    { emoji: "🏏", bg: "#fce8e6", title: "Vidarbha's Akshay Wadkar selected for India A cricket squad", source: "Lokmat", srcBg: "#fbbc04", time: "1 hour ago", tag: "Cricket", tagBg: "#e6f4ea", tagColor: "#137333" },
+    { emoji: "🏥", bg: "#fef7e0", title: "AIIMS Nagpur launches free OPD camp for senior citizens this weekend", source: "Hitavada", srcBg: "#34a853", time: "3 hours ago", tag: "Health", tagBg: "#fef7e0", tagColor: "#7a5800" },
+  ],
+  mumbai: [
+    { emoji: "🚉", bg: "#e8f0fe", title: "Mumbai local train services resume after signal fault at Dadar", source: "Mumbai Mirror", srcBg: "#1a73e8", time: "30 min ago", tag: "Transport", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "🌊", bg: "#e6f4ea", title: "High tide warning issued for Mumbai coastline — BMC on alert", source: "Hindustan Times Mumbai", srcBg: "#ea4335", time: "1 hour ago", tag: "Weather", tagBg: "#fce8e6", tagColor: "#a50e0e" },
+    { emoji: "🏗️", bg: "#fef7e0", title: "Coastal Road project Phase 2 to open next month says BMC", source: "Mid-Day", srcBg: "#fbbc04", time: "2 hours ago", tag: "City", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "🎬", bg: "#fce8e6", title: "Bollywood stars attend charity event at Bandra last night", source: "Mumbai Live", srcBg: "#34a853", time: "4 hours ago", tag: "Entertainment", tagBg: "#f0e4ff", tagColor: "#6b3fa0" },
+  ],
+  pune: [
+    { emoji: "🎓", bg: "#e6f4ea", title: "Pune University announces new exam schedule for final year students", source: "Sakal", srcBg: "#1a73e8", time: "1 hour ago", tag: "Education", tagBg: "#e6f4ea", tagColor: "#137333" },
+    { emoji: "🚗", bg: "#e8f0fe", title: "Pune-Mumbai Expressway toll rates revised from next month", source: "Pune Mirror", srcBg: "#ea4335", time: "2 hours ago", tag: "Transport", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "🌧️", bg: "#fef7e0", title: "Rain lashes Pune city — waterlogging reported in Kondhwa area", source: "Times of India Pune", srcBg: "#fbbc04", time: "3 hours ago", tag: "Weather", tagBg: "#fce8e6", tagColor: "#a50e0e" },
+    { emoji: "🏏", bg: "#fce8e6", title: "MCA selects Pune squad for upcoming Ranji Trophy matches", source: "Loksatta", srcBg: "#34a853", time: "5 hours ago", tag: "Cricket", tagBg: "#e6f4ea", tagColor: "#137333" },
+  ],
+  delhi: [
+    { emoji: "🏛️", bg: "#e8f0fe", title: "Delhi government announces free bus travel for students from Monday", source: "Hindustan Times Delhi", srcBg: "#1a73e8", time: "1 hour ago", tag: "Governance", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "😷", bg: "#fce8e6", title: "Delhi AQI drops to 'Poor' category — residents advised to stay indoors", source: "Times of India Delhi", srcBg: "#ea4335", time: "2 hours ago", tag: "Health", tagBg: "#fef7e0", tagColor: "#7a5800" },
+    { emoji: "🚇", bg: "#e6f4ea", title: "Delhi Metro Phase 4 — new stations to open by end of 2026", source: "Delhi News", srcBg: "#fbbc04", time: "3 hours ago", tag: "City", tagBg: "#e8f0fe", tagColor: "#185fa5" },
+    { emoji: "🌡️", bg: "#fef7e0", title: "Temperature drops sharply in Delhi — winter arrives early this year", source: "NDTV Delhi", srcBg: "#34a853", time: "4 hours ago", tag: "Weather", tagBg: "#fce8e6", tagColor: "#a50e0e" },
+  ]
+};
+
+const recData = {
+  nagpur: [
+    { title: "Vidarbha Cricket Association announces trials for U-19 team", reason: "Because you read cricket news" },
+    { title: "New flyover approved for Sitabuldi — work begins in December", reason: "Because you read city news" },
+    { title: "Weekend weather forecast for Nagpur — rain likely Saturday", reason: "Because you read weather alerts" },
+  ],
+  mumbai: [
+    { title: "Mumbai Indians announce pre-season training camp at Wankhede", reason: "Based on your sports reading" },
+    { title: "New metro line to connect Andheri to Bandra by 2027", reason: "Based on your transport reading" },
+  ],
+  pune: [
+    { title: "Pune FC enters ISL season with new coach and squad", reason: "Based on your sports reading" },
+    { title: "Shivajinagar to Hinjewadi metro corridor gets green light", reason: "Based on your transport reading" },
+  ],
+  delhi: [
+    { title: "Delhi Capitals begin IPL 2026 preparation at Kotla ground", reason: "Based on your sports reading" },
+    { title: "New cycle track to be built along Yamuna riverside — DDA", reason: "Based on your city reading" },
+  ]
+};
+
+const explainerText = {
+  nagpur: "All news below has been filtered to show only stories from <strong>Nagpur</strong>. Stories from Mumbai, Delhi, and other cities are removed. This is the <strong>Filtering System</strong> in action.",
+  mumbai: "All news below has been filtered to show only stories from <strong>Mumbai</strong>. Nagpur, Pune, Delhi news is filtered out. This is the <strong>Filtering System</strong> switching cities.",
+  pune: "All news below has been filtered to show only stories from <strong>Pune</strong>. Only Pune stories pass the filter. This is exactly like changing your location on an e-commerce site.",
+  delhi: "All news below has been filtered to show only stories from <strong>Delhi</strong>. The moment you switched city — the entire feed changed. That is the <strong>Filtering System</strong>.",
+};
+
+function renderFeed(city) {
+  const feed = document.getElementById('localFeed');
+  feed.innerHTML = '';
+  newsData[city].forEach(n => {
+    feed.innerHTML += `
+      <div class="news-card">
+        <div class="news-img" style="background:${n.bg}">${n.emoji}</div>
+        <div class="news-body">
+          <div class="news-source">
+            <div class="src-dot" style="background:${n.srcBg}">${n.source[0]}</div>
+            ${n.source}
+          </div>
+          <div class="news-title">${n.title}</div>
+          <div class="news-meta">
+            <span class="news-tag" style="background:${n.tagBg};color:${n.tagColor}">${n.tag}</span>
+            <span class="news-time">${n.time}</span>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  const rec = document.getElementById('recFeed');
+  rec.innerHTML = '';
+  recData[city].forEach(r => {
+    rec.innerHTML += `
+      <div class="rec-card">
+        <div class="rec-reason">&#10003; ${r.reason}</div>
+        <div class="rec-title">${r.title}</div>
+      </div>`;
+  });
+}
+
+function switchCity(btn, cityLabel, cityKey) {
+  document.querySelectorAll('.loc-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('cityName').textContent = cityLabel;
+  document.getElementById('explainerBox').innerHTML = `<strong>Filtering System in action:</strong> ${explainerText[cityKey]}`;
+  renderFeed(cityKey);
+}
+
+renderFeed('nagpur');
+</script>
+</body>
+</html>
